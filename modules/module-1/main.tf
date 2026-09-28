@@ -589,134 +589,6 @@ resource "aws_api_gateway_integration_response" "lambda_change_password_root_opt
 
 
 
-# DUMP-ROOT
-#########################################################################################################################
-resource "aws_api_gateway_resource" "dump_root" {
-  rest_api_id = aws_api_gateway_rest_api.apiLambda_ba.id
-  parent_id   = aws_api_gateway_rest_api.apiLambda_ba.root_resource_id
-  path_part   = "dump"
-}
-
-resource "aws_api_gateway_method" "proxy_dump_root_get" {
-  rest_api_id   = aws_api_gateway_rest_api.apiLambda_ba.id
-  resource_id   = aws_api_gateway_resource.dump_root.id
-  http_method   = "GET"
-  authorization = "NONE"
-
-}
-resource "aws_api_gateway_method_response" "proxy_dump_root_get_response_200" {
-  rest_api_id = aws_api_gateway_rest_api.apiLambda_ba.id
-  resource_id = aws_api_gateway_resource.dump_root.id
-  http_method = aws_api_gateway_method.proxy_dump_root_get.http_method
-  status_code = 200
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers"     = true,
-    "method.response.header.Access-Control-Allow-Methods"     = true,
-    "method.response.header.Access-Control-Allow-Origin"      = true,
-    "method.response.header.Access-Control-Allow-Credentials" = true
-  }
-  response_models = {
-    "application/json" = "Empty"
-  }
-}
-
-
-resource "aws_api_gateway_method" "dump_root_options" {
-  rest_api_id   = aws_api_gateway_rest_api.apiLambda_ba.id
-  resource_id   = aws_api_gateway_resource.dump_root.id
-  http_method   = "OPTIONS"
-  authorization = "NONE"
-
-}
-resource "aws_api_gateway_method_response" "dump_root_options_response_200" {
-  rest_api_id = aws_api_gateway_rest_api.apiLambda_ba.id
-  resource_id = aws_api_gateway_resource.dump_root.id
-  http_method = aws_api_gateway_method.dump_root_options.http_method
-  status_code = 200
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers"     = true,
-    "method.response.header.Access-Control-Allow-Methods"     = true,
-    "method.response.header.Access-Control-Allow-Origin"      = true,
-    "method.response.header.Access-Control-Allow-Credentials" = true
-  }
-  response_models = {
-    "application/json" = "Empty"
-  }
-}
-
-
-# dump
-resource "aws_api_gateway_integration" "lambda_dump_root_post" {
-  rest_api_id = aws_api_gateway_rest_api.apiLambda_ba.id
-  resource_id = aws_api_gateway_resource.dump_root.id
-  http_method = aws_api_gateway_method.proxy_dump_root_get.http_method
-
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.lambda_ba_data.invoke_arn
-  request_templates = {
-    "application/json" = jsonencode(
-      {
-        statusCode = 200
-      }
-    )
-  }
-}
-resource "aws_api_gateway_integration_response" "lambda_dump_root_post_integration_response" {
-  rest_api_id = aws_api_gateway_rest_api.apiLambda_ba.id
-  resource_id = aws_api_gateway_resource.dump_root.id
-  http_method = aws_api_gateway_method.proxy_dump_root_get.http_method
-  status_code = aws_api_gateway_method_response.dump_root_options_response_200.status_code
-
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,JWT_TOKEN'",
-    "method.response.header.Access-Control-Allow-Methods" = "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'",
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'",
-
-  }
-
-
-  depends_on = [aws_api_gateway_integration.lambda_dump_root_post]
-
-}
-
-resource "aws_api_gateway_integration" "lambda_dump_root_options" {
-  rest_api_id = aws_api_gateway_rest_api.apiLambda_ba.id
-  resource_id = aws_api_gateway_resource.dump_root.id
-  http_method = aws_api_gateway_method.dump_root_options.http_method
-
-
-  type                 = "MOCK"
-  passthrough_behavior = "WHEN_NO_MATCH"
-
-  request_templates = {
-    "application/json" = jsonencode(
-      {
-        statusCode = 200
-      }
-    )
-  }
-}
-resource "aws_api_gateway_integration_response" "lambda_dump_root_options_integration_response" {
-  rest_api_id = aws_api_gateway_rest_api.apiLambda_ba.id
-  resource_id = aws_api_gateway_resource.dump_root.id
-  http_method = aws_api_gateway_method.dump_root_options.http_method
-  status_code = aws_api_gateway_method_response.dump_root_options_response_200.status_code
-
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,JWT_TOKEN'",
-    "method.response.header.Access-Control-Allow-Methods" = "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'",
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'",
-
-  }
-
-  depends_on = [aws_api_gateway_integration.lambda_dump_root_options]
-
-}
 #########################################################################################################################
 
 
@@ -2946,10 +2818,6 @@ resource "aws_api_gateway_deployment" "apideploy_ba" {
     aws_api_gateway_method_response.proxy_change_password_root_post_response_200,
     aws_api_gateway_integration.lambda_change_password_root_post,
 
-    aws_api_gateway_integration_response.lambda_dump_root_post_integration_response,
-    aws_api_gateway_method_response.proxy_dump_root_get_response_200,
-    aws_api_gateway_integration.lambda_dump_root_post,
-
     aws_api_gateway_integration_response.lambda_list_posts_root_post_integration_response,
     aws_api_gateway_method_response.proxy_list_posts_root_post_response_200,
     aws_api_gateway_integration.lambda_list_posts_root_post,
@@ -2981,10 +2849,6 @@ resource "aws_api_gateway_deployment" "apideploy_ba" {
     aws_api_gateway_integration_response.lambda_change_password_root_options_integration_response,
     aws_api_gateway_method_response.change_password_root_options_response_200,
     aws_api_gateway_integration.lambda_change_password_root_options,
-
-    aws_api_gateway_integration_response.lambda_dump_root_options_integration_response,
-    aws_api_gateway_method_response.dump_root_options_response_200,
-    aws_api_gateway_integration.lambda_dump_root_options,
 
     aws_api_gateway_integration_response.lambda_list_posts_root_options_integration_response,
     aws_api_gateway_method_response.list_posts_root_options_response_200,
@@ -3059,7 +2923,7 @@ resource "aws_api_gateway_deployment" "apideploy_ba" {
   rest_api_id = aws_api_gateway_rest_api.apiLambda_ba.id
   stage_name  = "v1"
   variables = {
-    "BLOG_KEY" = "655877f0f8ade541e1d21a48fe396ddb"
+    "BLOG_KEY" = "****6ddb"
   }
 }
 

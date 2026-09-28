@@ -104,26 +104,6 @@ def lambda_handler(event, context):
     dbUserTable = dynamodb.Table(userTable)
     dbPostTable = dynamodb.Table(postsTable)
 
-    if event["path"] == "/dump":
-
-        response = dbUserTable.scan()
-        userItems = response["Items"]
-
-        while "LastEvaluatedKey" in response:
-            response = dbUserTable.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
-            userItems.extend(response["Items"])
-
-        response = dbPostTable.scan()
-        postItems = response["Items"]
-
-        while "LastEvaluatedKey" in response:
-            response = dbPostTable.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
-            postItems.extend(response["Items"])
-
-        responses = userItems + postItems
-
-        return generateResponse(200, json.dumps(responses))
-
     if event["httpMethod"] == "POST" and event["path"] == "/register":
         data = json.loads(event["body"])
         new_user = {}
@@ -212,8 +192,6 @@ def lambda_handler(event, context):
             "address": db_user["Item"]["address"],
             "country": db_user["Item"]["country"],
             "phone": db_user["Item"]["phone"],
-            "secretQuestion": db_user["Item"]["secretQuestion"],
-            "secretAnswer": db_user["Item"]["secretAnswer"],
             "username": db_user["Item"]["username"],
             "id": db_user["Item"]["id"],
         }
@@ -223,6 +201,11 @@ def lambda_handler(event, context):
         return generateResponse(200, json.dumps({"body": responses}))
 
     if event["httpMethod"] == "POST" and event["path"] == "/reset-password":
+        # Require authentication for password reset
+        if not auth_is_valid(event):
+            responses = "Authentication required to reset password"
+            return generateResponse(401, json.dumps({"body": responses}))
+
         data = json.loads(event["body"])
 
         if (
